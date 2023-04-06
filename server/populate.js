@@ -6,7 +6,7 @@ const pool = new Pool({
   user: "postgres",
   host: "localhost",
   database: "reviewsdb",
-  password: "MSPG95",
+  password: process.env.PASSWORD_PGSQL,
   port: 5432,
 });
 
