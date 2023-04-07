@@ -18,7 +18,7 @@ pool.on('connect', () => {
 
 const results = [];
 
-fs.createReadStream('/Volumes/Seagate Drive/HR-Senior/SDC/SDC-ReviewsAPI/ReviewsAPI/data/reviews2.csv')
+fs.createReadStream('/Volumes/Seagate Drive/HR-Senior/SDC/SDC-ReviewsAPI/ReviewsAPI/data/reviews.csv')
   .pipe(csv())
   .on('data', (data) => {
     // Transform the data here as needed
@@ -42,10 +42,8 @@ fs.createReadStream('/Volumes/Seagate Drive/HR-Senior/SDC/SDC-ReviewsAPI/Reviews
   .on('end', () => {
     //Load the data into PostgreSQL
 
-    console.log('results', results);
-
     const query = `
-      INSERT INTO reviewstest (id,product_id,rating,date,summary,body,recommend,reported,reviewer_name,reviewer_email,response,helpfulness)
+      INSERT INTO reviews (id,product_id,rating,date,summary,body,recommend,reported,reviewer_name,reviewer_email,response,helpfulness)
       VALUES
         ${results.map((data) => `(${data.id}, ${data.product_id}, '${data.rating}', '${data.date}', '${data.summary}', '${data.body}', ${data.recommend}, ${data.reported}, '${data.reviewer_name}', '${data.reviewer_email}', E'${data.response.replace(/'/g, "''")}', ${data.helpfulness})`).join(',')}
     `;
