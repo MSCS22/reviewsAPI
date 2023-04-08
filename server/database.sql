@@ -2,7 +2,7 @@ CREATE DATABASE reviewsTEST;
 
 
 CREATE TABLE reviews (
-  id SERIAL PRIMARY KEY,
+  review_id SERIAL PRIMARY KEY,
   product_id INTEGER NOT NULL,
   rating INTEGER NOT NULL,
   date DATE NOT NULL,
@@ -36,7 +36,10 @@ CREATE TABLE characteristics (
   name VARCHAR(100) NOT NULL
 );
 
-
+CREATE TABLE test (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(100) NULL
+);
 -- psql -U postgres -d reviewsdb -c "\copy characteristics FROM '/Volumes/Seagate Drive/HR-Senior/SDC/SDC-ReviewsAPI/ReviewsAPI/data/characteristics.csv' DELIMITER ',' CSV HEADER"
 
 
