@@ -26,10 +26,11 @@ module.exports = {
           SELECT reviews.*, coalesce(json_agg(json_build_object('id', reviews_photos.id, 'url', reviews_photos.url)) FILTER (WHERE reviews_photos.review_id IS NOT NULL), '[]') as photos
           FROM reviews
           LEFT JOIN reviews_photos ON reviews.review_id = reviews_photos.review_id
-          WHERE reviews.product_id = $1
+          WHERE reviews.product_id = $1 AND NOT reviews.reported
           GROUP BY reviews.review_id, reviews_photos.id
           ORDER BY ${sort} DESC
           LIMIT $2 OFFSET $3
+
         `;
 
         const values = [product_id, count, offset];
@@ -45,11 +46,73 @@ module.exports = {
         // await client.end();
   },
   getMeta: async (req, res) => {
-    const product_id = req.query.product_id;
+    const product_id = parseInt(req.query.product_id);
+    const ratingsQuery = `
+      SELECT rating, recommend
+      FROM reviews
+      WHERE product_id = $1
+      `;
+      ratingValues = [product_id];
+    const ratingsResult = await client.query(ratingsQuery, ratingValues);
 
+    let ratingsObj = {};
+    let recommendObj = {
+      "false": 0,
+      "true": 0
+    };
+
+    ratingsResult.rows.forEach( (el) => {
+      if (!ratingsObj[el.rating]){
+        ratingsObj[el.rating]=1
+      }
+      else if (ratingsObj[el.rating]){
+        ratingsObj[el.rating]+=1
+      }
+      if (el.recommend){
+        recommendObj.true+=1;
+      }
+      else if (!el.recommend) {
+        recommendObj.false+=1;
+      }
+
+    })
+
+    const characteristicsQuery = `SELECT  characteristics.id, characteristics.name, characteristic_reviews.value
+    FROM characteristics
+    JOIN characteristic_reviews ON characteristics.id = characteristic_reviews.characteristic_id
+    WHERE characteristics.product_id = ${product_id}`;
+
+    const charResult = await client.query(characteristicsQuery);
+    const charObj = {};
+    let charsCount = 0
+    charResult.rows.forEach((el)=> {
+
+      if(!charObj[el.name]) {
+        charsCount +=1;
+        charObj[el.name]={
+          id: el.id,
+          value: el.value
+        }
+      } else if(charObj[el.name]) {
+        charObj[el.name].value+=el.value
+      }
+    })
+
+    // dividing value by the number of characteristcs get the average value
+    for (let key in charObj) {
+      charObj[key].value = charObj[key].value/charsCount;
+    }
+
+    const responseObj = {
+      product_id: product_id,
+      ratings: ratingsObj,
+      recommended: recommendObj,
+      characteristics:charObj
+    }
+    res.send(responseObj);
   },
   post: async (req, res) => {
-    const product_id = req.query.product_id;
+    const product_id = parseInt(req.query.product_id);
 
   },
   putHelpful: async (req, res) => {
@@ -84,8 +147,9 @@ module.exports = {
     }
 
     const query = `
-      DELETE FROM reviews
-      WHERE review_id = $1
+    UPDATE reviews
+    SET reported = true
+    WHERE review_id = $1
     `;
     const values = [reviewID];
 
