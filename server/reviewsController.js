@@ -1,11 +1,12 @@
 const client = require('./db');
+const moment = require('moment');
 
 module.exports = {
   get: async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const count = parseInt(req.query.count) || 5;
         let sort = req.query.sort || 'id';
-        const product_id = req.query.product_id;
+        const product_id = parseInt(req.query.product_id);
 
         if(sort === 'newest') {
           sort = 'date'
@@ -22,16 +23,25 @@ module.exports = {
         // Use the product_id, page, count, and sort parameters in your SQL query
         const offset = (page - 1) * count;
         const query = `
-          SELECT * FROM reviews
-          WHERE product_id = $1
+          SELECT reviews.*, coalesce(json_agg(json_build_object('id', reviews_photos.id, 'url', reviews_photos.url)) FILTER (WHERE reviews_photos.review_id IS NOT NULL), '[]') as photos
+          FROM reviews
+          LEFT JOIN reviews_photos ON reviews.review_id = reviews_photos.review_id
+          WHERE reviews.product_id = $1
+          GROUP BY reviews.review_id
           ORDER BY ${sort} DESC
           LIMIT $2 OFFSET $3
         `;
+
         const values = [product_id, count, offset];
-
-        const result = await client.query(query, values);
-
-        res.send(result.rows);
+        const reviewsResult = await client.query(query, values);
+        reviewsResult.rows.forEach((el)=>el.date=moment(parseInt(el.date)).format('YYYY-MM-DD'))
+        const responseObj = {
+          product: product_id,
+          page: page,
+          count: count,
+          result: reviewsResult.rows
+        }
+        res.send(responseObj);
         // await client.end();
   },
   getMeta: async (req, res) => {
