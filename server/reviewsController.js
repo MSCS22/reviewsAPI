@@ -27,7 +27,7 @@ module.exports = {
           FROM reviews
           LEFT JOIN reviews_photos ON reviews.review_id = reviews_photos.review_id
           WHERE reviews.product_id = $1
-          GROUP BY reviews.review_id
+          GROUP BY reviews.review_id, reviews_photos.id
           ORDER BY ${sort} DESC
           LIMIT $2 OFFSET $3
         `;
