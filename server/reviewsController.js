@@ -112,7 +112,53 @@ module.exports = {
     res.send(responseObj);
   },
   post: async (req, res) => {
-    const product_id = parseInt(req.query.product_id);
+    console.log('post body', req.body)
+    // extract the data from the post request body
+    const { product_id, rating, summary, body, recommend, name, email, photos, characteristics } = req.body;
+    const date = moment().valueOf(); // convert the date to the required format
+
+    // construct the SQL query to insert a new row into the reviews table
+    const query = {
+      text: 'INSERT INTO reviews(product_id, rating, date, summary, body, recommend, reviewer_name, reviewer_email, helpfulness) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING review_id',
+      values: [product_id, rating, date, summary, body, recommend, name, email, 0],
+    };
+    // execute the SQL query and store the newly created review_id as a constant
+    let review_id;
+    try {
+      const res = await client.query(query);
+      review_id = res.rows[0].review_id;
+      console.log('New review created with ID:', review_id);
+    } catch (err) {
+      console.error('Error executing insert query into reviews table', err);
+    }
+      // inserting intro characteristic_reviews
+      let char_id;
+      let value;
+      const charsReviewsQuery = {
+        text: 'INSERT INTO characteristic_reviews(characteristic_id, review_id, value) VALUES($1, $2, $3 )',
+        values: [char_id, review_id, value],
+      };
+
+      for (let key in characteristics) {
+        char_id = key;
+        value = characteristics[key];
+        charsReviewsQuery.values = [char_id, review_id, value];
+        await client.query(charsReviewsQuery);
+      }
+      // inserting intro reviews_photos
+      let url;
+      const ReviewsPhotosQuery = {
+        text: 'INSERT INTO reviews_photos(review_id, url) VALUES($1, $2 )',
+        values: [ review_id, url],
+      };
+      photos.forEach( (el) => {
+        url=el;
+        client.query(ReviewsPhotosQuery)
+      })
+
+
+
+    res.send('post sucessful')
 
   },
   putHelpful: async (req, res) => {
