@@ -11,11 +11,6 @@ const reviews = require('./reviewsController');
 //   res.send(result.rows);
 // });
 
-// // Retrieve data from the database
-// router.get('/data', async (req, res) => {
-//   const result = await db.query('SELECT * FROM users');
-//   res.send(result.rows);
-// });
 router.get('/hello', async (req, res) => {
   res.send("hello world!");
 });
