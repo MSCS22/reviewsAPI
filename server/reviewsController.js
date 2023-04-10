@@ -112,16 +112,23 @@ module.exports = {
     res.send(responseObj);
   },
   post: async (req, res) => {
-    console.log('post body', req.body)
     // extract the data from the post request body
     const { product_id, rating, summary, body, recommend, name, email, photos, characteristics } = req.body;
     const date = moment().valueOf(); // convert the date to the required format
 
     // construct the SQL query to insert a new row into the reviews table
     const query = {
-      text: 'INSERT INTO reviews(product_id, rating, date, summary, body, recommend, reviewer_name, reviewer_email, helpfulness) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING review_id',
+      text: `
+        INSERT INTO reviews (
+          review_id, product_id, rating, date, summary, body, recommend, reviewer_name, reviewer_email, helpfulness
+        ) VALUES (
+          (SELECT COALESCE(MAX(review_id), 0) + 1 FROM reviews),
+          $1, $2, $3, $4, $5, $6, $7, $8, $9
+        ) RETURNING review_id
+      `,
       values: [product_id, rating, date, summary, body, recommend, name, email, 0],
     };
+
     // execute the SQL query and store the newly created review_id as a constant
     let review_id;
     try {
@@ -135,9 +142,13 @@ module.exports = {
       let char_id;
       let value;
       const charsReviewsQuery = {
-        text: 'INSERT INTO characteristic_reviews(characteristic_id, review_id, value) VALUES($1, $2, $3 )',
+        text: `
+          INSERT INTO characteristic_reviews (id, characteristic_id, review_id, value)
+          VALUES ((SELECT COALESCE(MAX(id), 0) + 1 FROM characteristic_reviews), $1, $2, $3)
+        `,
         values: [char_id, review_id, value],
       };
+
 
       for (let key in characteristics) {
         char_id = key;
@@ -148,9 +159,11 @@ module.exports = {
       // inserting intro reviews_photos
       let url;
       const ReviewsPhotosQuery = {
-        text: 'INSERT INTO reviews_photos(review_id, url) VALUES($1, $2 )',
-        values: [ review_id, url],
+        text: `INSERT INTO reviews_photos(id, review_id, url)
+               VALUES ((SELECT COALESCE(MAX(id), 0) + 1 FROM reviews_photos), $1, $2)`,
+        values: [review_id, url],
       };
+
       photos.forEach( (el) => {
         url=el;
         client.query(ReviewsPhotosQuery)
