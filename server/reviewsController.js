@@ -1,4 +1,4 @@
-const client = require('./db');
+const pool = require('./db');
 const moment = require('moment');
 
 module.exports = {
@@ -34,7 +34,7 @@ module.exports = {
         `;
 
         const values = [product_id, count, offset];
-        const reviewsResult = await client.query(query, values);
+        const reviewsResult = await pool.query(query, values);
         reviewsResult.rows.forEach((el)=>el.date=moment(parseInt(el.date)).format('YYYY-MM-DD'))
         const responseObj = {
           product: product_id,
@@ -53,7 +53,7 @@ module.exports = {
       WHERE product_id = $1
       `;
       ratingValues = [product_id];
-    const ratingsResult = await client.query(ratingsQuery, ratingValues);
+    const ratingsResult = await pool.query(ratingsQuery, ratingValues);
 
     let ratingsObj = {};
     let recommendObj = {
@@ -82,7 +82,7 @@ module.exports = {
     JOIN characteristic_reviews ON characteristics.id = characteristic_reviews.characteristic_id
     WHERE characteristics.product_id = ${product_id}`;
 
-    const charResult = await client.query(characteristicsQuery);
+    const charResult = await pool.query(characteristicsQuery);
     const charObj = {};
     let charsCount = 0
     charResult.rows.forEach((el)=> {
@@ -132,7 +132,7 @@ module.exports = {
     // execute the SQL query and store the newly created review_id as a constant
     let review_id;
     try {
-      const res = await client.query(query);
+      const res = await pool.query(query);
       review_id = res.rows[0].review_id;
       console.log('New review created with ID:', review_id);
     } catch (err) {
@@ -154,7 +154,7 @@ module.exports = {
         char_id = key;
         value = characteristics[key];
         charsReviewsQuery.values = [char_id, review_id, value];
-        await client.query(charsReviewsQuery);
+        await pool.query(charsReviewsQuery);
       }
       // inserting intro reviews_photos
       let url;
@@ -166,7 +166,7 @@ module.exports = {
 
       photos.forEach( (el) => {
         url=el;
-        client.query(ReviewsPhotosQuery)
+        pool.query(ReviewsPhotosQuery)
       })
 
 
@@ -189,7 +189,7 @@ module.exports = {
     const values = [reviewID];
 
     try {
-      await client.query(query, values);
+      await pool.query(query, values);
       res.status(200).send({ message: 'Review marked helpful' });
     } catch (error) {
       console.error(error);
@@ -213,7 +213,7 @@ module.exports = {
     const values = [reviewID];
 
     try {
-      const result = await client.query(query, values);
+      const result = await pool.query(query, values);
       if (result.rowCount > 0) {
         res.status(200).send({ message: 'Review reported successfully' });
       } else {
