@@ -5,7 +5,7 @@ CREATE TABLE reviews (
   review_id SERIAL PRIMARY KEY,
   product_id INTEGER NOT NULL,
   rating INTEGER NOT NULL,
-  date DATE NOT NULL,
+  date VARCHAR(100) NOT NULL,
   summary VARCHAR(255),
   body TEXT,
   recommend BOOLEAN DEFAULT false,

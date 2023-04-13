@@ -11,8 +11,6 @@ module.exports = {
         if(sort === 'newest') {
           sort = 'date'
         }
-        // await client.connect();
-        // console.log('Successfully connected to the database!');
 
         // Validate the sort parameter against a list of allowed column names
         const allowedSortColumns = ['id', 'rating', 'date', 'helpfulness'];
